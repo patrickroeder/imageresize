@@ -1,0 +1,17 @@
+{
+  "name": "imageresize",
+  "version": "1.0.0",
+  "description": "",
+  "main": "imageResize.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "Patrick",
+  "license": "ISC",
+  "devDependencies": {
+    "eslint": "^5.12.0"
+  },
+  "dependencies": {
+    "sharp": "^0.21.2"
+  }
+}
