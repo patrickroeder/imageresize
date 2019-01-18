@@ -1,6 +1,7 @@
-/* 1. Load a file
-   2. resize the file
-   3. save the file using a different filename  */
+/** 
+ * Module imageResize - Resizes a series of images.
+ * @module imageResize
+*/
 
 
 const fs = require('fs');
@@ -26,13 +27,13 @@ const isImage = filename => {
   return false;
 }
 
-// reads file
+// reads an image file
 
 const readImageFile = filename => {
   return new Promise((resolve, reject) => {
     // check if we're dealing with an image
     if (!isImage(filename))
-      return reject('File is not an image.');
+      return reject(`${filename}: File is not an image.`);
     fs.readFile(filename, (err, data) => {
       if(err) {
         reject(err);
@@ -43,6 +44,8 @@ const readImageFile = filename => {
   })
 }
 
+// uses the sharp library to resize a file
+
 const resize = (filebuffer, size) => {
   // returns a promise
   return sharp(filebuffer)
@@ -50,15 +53,29 @@ const resize = (filebuffer, size) => {
     .toFile('img/image1-resized.jpg');
 }
 
-readImageFile('img/image1.jpg')
-  .then(res => {
-    // res contains the image buffer
-    // we resolve the promise with a thenable
-    return resize(res, 400);
-  })
-  .then(res => {
-    console.log(res)
-  })
-  .catch(error => {
-    console.log(error);
-  })
+/**
+ * Public function imageResize -- loads and resizes a single image.
+ * @param {string} filename 
+ * @param {int} size 
+ */
+
+const imageResize = (filename, size) => {
+  if (!Number.isInteger(size)) {
+    console.log('Size must be a number.');
+    return;
+  }
+  readImageFile(filename)
+    .then(res => {
+      // res contains the image buffer
+      // we resolve the promise with a thenable
+      return resize(res, size);
+    })
+    .then(res => {
+      console.log(res)
+    })
+    .catch(error => {
+      console.log(error);
+    })
+}
+
+exports.resize = imageResize;
