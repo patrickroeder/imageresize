@@ -3,58 +3,18 @@
  * @module imageResize
 */
 
-
-const fs = require('fs');
 const sharp = require('sharp');
 const ora = require('ora');
 
-// helpers
+const spinner = new ora('Initializing...').start();
 
-const getExtension = filename => {
-  const parts = filename.split('.');
-  return parts[parts.length - 1];
-}
+// uses the sharp library to load, resize and then save a single image
 
-const isImage = filename => {
-  // rudimentary check based on file extension -- no check inside the file itself for e.g. byte structure
-  const ext = getExtension(filename);
-  switch (ext.toLowerCase()) {
-  case 'jpg':
-  case 'gif':
-  case 'bmp':
-  case 'png':
-    return true;
-  }
-  return false;
-}
-
-const spinner = new ora('Loading file').start();
-
-// reads an image file
-
-const readImageFile = filename => {
-  return new Promise((resolve, reject) => {
-    // check if we're dealing with an image
-    if (!isImage(filename))
-      return reject(`${filename}: File is not an image.`);
-    fs.readFile(filename, (err, data) => {
-      if(err) {
-        reject(err);
-      } else {
-        setTimeout(() => resolve(data), 1000);
-      }
-    })
-  })
-}
-
-// uses the sharp library to resize a file and then save it
-// TODO: save separate function?
-
-const resizeAndSave = (filebuffer, size) => {
+const resizeSingleImage = (input, size, output) => {
   // returns a promise
-  return sharp(filebuffer)
+  return sharp(input)
     .resize(size)
-    .toFile('img/image1-resized.jpg');
+    .toFile(output);
 }
 
 /**
@@ -68,17 +28,12 @@ const imageResize = (filename, size) => {
     spinner.fail('Size must be a number.');
     return;
   }
-  readImageFile(filename)
+  resizeSingleImage(filename, size, 'img/image1-resized.jpg')
     .then(res => {
-      // res contains the image buffer
-      // we resolve the promise with a thenable
-      return resizeAndSave(res, size);
-    })
-    .then(res => {
-      spinner.succeed(`Image ${filename} resized.`);
+      spinner.succeed(`${filename} resized.`);
     })
     .catch(error => {
-      spinner.fail(error);
+      spinner.fail(`${filename}: ${error}`);
     })
 }
 
