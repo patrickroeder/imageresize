@@ -6,6 +6,7 @@
 
 const fs = require('fs');
 const sharp = require('sharp');
+const ora = require('ora');
 
 // helpers
 
@@ -27,6 +28,8 @@ const isImage = filename => {
   return false;
 }
 
+const spinner = new ora('Loading file').start();
+
 // reads an image file
 
 const readImageFile = filename => {
@@ -38,15 +41,16 @@ const readImageFile = filename => {
       if(err) {
         reject(err);
       } else {
-        resolve(data);
+        setTimeout(() => resolve(data), 1000);
       }
     })
   })
 }
 
-// uses the sharp library to resize a file
+// uses the sharp library to resize a file and then save it
+// TODO: save separate function?
 
-const resize = (filebuffer, size) => {
+const resizeAndSave = (filebuffer, size) => {
   // returns a promise
   return sharp(filebuffer)
     .resize(size)
@@ -61,20 +65,20 @@ const resize = (filebuffer, size) => {
 
 const imageResize = (filename, size) => {
   if (!Number.isInteger(size)) {
-    console.log('Size must be a number.');
+    spinner.fail('Size must be a number.');
     return;
   }
   readImageFile(filename)
     .then(res => {
       // res contains the image buffer
       // we resolve the promise with a thenable
-      return resize(res, size);
+      return resizeAndSave(res, size);
     })
     .then(res => {
-      console.log(res)
+      spinner.succeed(`Image ${filename} resized.`);
     })
     .catch(error => {
-      console.log(error);
+      spinner.fail(error);
     })
 }
 
