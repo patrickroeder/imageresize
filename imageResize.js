@@ -27,13 +27,6 @@ const getDirContents = (dir) => {
   })
 }
 
-/**
- * Public function resizeSingleImage -- loads and resizes a single image.
- * @param {string} input - The path of the input file
- * @param {string} output - The path of the output file 
- * @param {int} size - Array of sizes
- */
-
 const resizeSingleImage = (input, output, size) => {
   if (!Number.isInteger(size)) {
     spinner.fail('Size is missing or not a number');
@@ -43,12 +36,6 @@ const resizeSingleImage = (input, output, size) => {
   return sharp(input)
     .resize(size)
     .toFile(output)
-    .then(res => {
-      spinner.succeed(`${input} resized.`);
-    })
-    .catch(err => {
-      spinner.fail(`${output}: ${err}`);
-    })
 }
 
 /**
@@ -59,10 +46,24 @@ const resizeSingleImage = (input, output, size) => {
  */
 
 const resizeImages = (inputDir, outputDir, sizes) => {
+  if (!Array.isArray(sizes)) {
+    spinner.fail (`${inputDir}: Wrong size format.`);
+    return;
+  }
+  if (!fs.existsSync(outputDir)) {
+    spinner.fail (`${outputDir}: Directory does not exist.`);
+    return;
+  }
   getDirContents(inputDir)
     .then(files => {
-      files.forEach(file => {
-        spinner.info(file);
+      files.forEach( filename => {
+        sizes.forEach( size => {
+          const parts = filename.split('.');
+          const inputPath = inputDir + filename;
+          const outputPath = outputDir + parts[0] + '-' + size.toString() + '.' + parts[parts.length - 1];
+          resizeSingleImage(inputPath, outputPath, size);
+          spinner.succeed(`${inputPath} resized to ${outputPath}`);
+        });
       });
     })
     .catch(err => {
@@ -70,5 +71,4 @@ const resizeImages = (inputDir, outputDir, sizes) => {
     })
 }
 
-exports.resizeImage = resizeSingleImage;
 exports.resizeImages = resizeImages;
