@@ -5,9 +5,6 @@
 
 const fs = require('fs');
 const sharp = require('sharp');
-const ora = require('ora');
-
-const spinner = new ora().start();
 
 // helpers
 
@@ -27,11 +24,13 @@ const getDirContents = (dir) => {
   })
 }
 
+// loads, resizes and saves a single image
 const resizeSingleImage = (input, output, size) => {
   if (!Number.isInteger(size)) {
-    spinner.fail('Size is missing or not a number');
+    console.log('Size is missing or not a number');
     return;
   }
+
   // returns a promise
   return sharp(input)
     .resize(size)
@@ -47,11 +46,15 @@ const resizeSingleImage = (input, output, size) => {
 
 const resizeImages = (inputDir, outputDir, sizes) => {
   if (!Array.isArray(sizes)) {
-    spinner.fail (`${inputDir}: Wrong size format.`);
-    return;
+    if (Number.isInteger(sizes)) {
+      sizes = [sizes];
+    } else {
+      console.log('Wrong size format.');
+      return;
+    }
   }
   if (!fs.existsSync(outputDir)) {
-    spinner.fail (`${outputDir}: Directory does not exist.`);
+    console.log(`${outputDir}: Directory does not exist.`);
     return;
   }
   getDirContents(inputDir)
@@ -61,13 +64,18 @@ const resizeImages = (inputDir, outputDir, sizes) => {
           const parts = filename.split('.');
           const inputPath = inputDir + filename;
           const outputPath = outputDir + parts[0] + '-' + size.toString() + '.' + parts[parts.length - 1];
-          resizeSingleImage(inputPath, outputPath, size);
-          spinner.succeed(`${inputPath} resized to ${outputPath}`);
+          resizeSingleImage(inputPath, outputPath, size)
+            .then(res => {
+              console.log(`${inputPath} resized to ${outputPath}`);
+            })
+            .catch(err => {
+              console.log(`${inputPath}: ${err}`);
+            })
         });
       });
     })
     .catch(err => {
-      spinner.fail(err);
+      console.log(err);
     })
 }
 
