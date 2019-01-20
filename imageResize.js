@@ -24,19 +24,6 @@ const getDirContents = (dir) => {
   })
 }
 
-// loads, resizes and saves a single image
-const resizeSingleImage = (input, output, size) => {
-  if (!Number.isInteger(size)) {
-    console.log('Size is missing or not a number');
-    return;
-  }
-
-  // returns a promise
-  return sharp(input)
-    .resize(size)
-    .toFile(output)
-}
-
 /**
  * Public function resizeImages -- loads and resizes a series of images inside adirectory.
  * @param {string} inputDir - The path of the input directory
@@ -58,26 +45,25 @@ const resizeImages = (inputDir, outputDir, sizes) => {
     return;
   }
 
-  let promises = [];
-
   getDirContents(inputDir)
+    // we've now got our array of files in the directory
     .then(files => {
+      let promises = [];
       files.forEach( filename => {
         sizes.forEach( size => {
           const parts = filename.split('.');
           const inputPath = inputDir + filename;
           const outputPath = outputDir + parts[0] + '-' + size.toString() + '.' + parts[parts.length - 1];
-          promises.push(resizeSingleImage(inputPath, outputPath, size));
+          // calls sharp which returns a promise and loads, resizes and saves a single image
+          promises.push(sharp(inputPath).resize(size).toFile(outputPath));
         });
       });
+      // The Promise.all method returns a promise when all the promises inside the promises array are resolved
+      return Promise.all(promises);
     })
-    .catch(err => {
-      console.log(err);
-    })
-
-  Promise.all(promises)
+    // chaining the thenables instead of nesting
     .then(res => {
-      console.log(`all images in directory ${inputDir} resized and copied to ${outputDir}`);
+      console.log(`All images in directory ${inputDir} resized to ${sizes} and copied to ${outputDir}`);
     })
     .catch(err => {
       console.log(err);
