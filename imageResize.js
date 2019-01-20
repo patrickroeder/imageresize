@@ -12,7 +12,7 @@ const getDirContents = (dir) => {
   return new Promise((resolve, reject) => {
     // check if directory exists
     if (!fs.existsSync(dir)) {
-      return reject(`${dir}: Directory does not exist.`);
+      return reject(`${dir}: Directory does not exist`);
     }
     fs.readdir(dir, (err, files) => {
       if(err) {
@@ -49,14 +49,17 @@ const resizeImages = (inputDir, outputDir, sizes) => {
     if (Number.isInteger(sizes)) {
       sizes = [sizes];
     } else {
-      console.log('Wrong size format.');
+      console.log('Wrong size format or wrong parameter count');
       return;
     }
   }
   if (!fs.existsSync(outputDir)) {
-    console.log(`${outputDir}: Directory does not exist.`);
+    console.log(`${outputDir}: Directory does not exist`);
     return;
   }
+
+  let promises = [];
+
   getDirContents(inputDir)
     .then(files => {
       files.forEach( filename => {
@@ -64,15 +67,17 @@ const resizeImages = (inputDir, outputDir, sizes) => {
           const parts = filename.split('.');
           const inputPath = inputDir + filename;
           const outputPath = outputDir + parts[0] + '-' + size.toString() + '.' + parts[parts.length - 1];
-          resizeSingleImage(inputPath, outputPath, size)
-            .then(res => {
-              console.log(`${inputPath} resized to ${outputPath}`);
-            })
-            .catch(err => {
-              console.log(`${inputPath}: ${err}`);
-            })
+          promises.push(resizeSingleImage(inputPath, outputPath, size));
         });
       });
+    })
+    .catch(err => {
+      console.log(err);
+    })
+
+  Promise.all(promises)
+    .then(res => {
+      console.log(`all images in directory ${inputDir} resized and copied to ${outputDir}`);
     })
     .catch(err => {
       console.log(err);
