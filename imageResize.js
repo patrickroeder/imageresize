@@ -5,15 +5,19 @@
 
 const fs = require('fs');
 const sharp = require('sharp');
+const ora = require('ora');
 
-// helpers
-
+/**
+ * private helper function getDirContents - asynchronously get the contents of a directory and return it. Returns a Promise
+ * @param {string} dir 
+ */
 const getDirContents = (dir) => {
   return new Promise((resolve, reject) => {
     // check if directory exists
     if (!fs.existsSync(dir)) {
       return reject(`${dir}: Directory does not exist`);
     }
+    // Alternatively use readdirSync() to synchronously retrieve list of filenames
     fs.readdir(dir, (err, files) => {
       if(err) {
         reject(err);
@@ -32,16 +36,19 @@ const getDirContents = (dir) => {
  */
 
 const resizeImages = (inputDir, outputDir, sizes) => {
+
+  const spinner = ora('Resizing images...').start();
+
   if (!Array.isArray(sizes)) {
     if (Number.isInteger(sizes)) {
       sizes = [sizes];
     } else {
-      console.log('Wrong size format or wrong parameter count');
+      spinner.fail('Wrong size format or wrong parameter count');
       return;
     }
   }
   if (!fs.existsSync(outputDir)) {
-    console.log(`${outputDir}: Directory does not exist`);
+    spinner.fail(`${outputDir}: Directory does not exist`);
     return;
   }
 
@@ -63,10 +70,10 @@ const resizeImages = (inputDir, outputDir, sizes) => {
     })
     // chaining the thenables instead of nesting
     .then(res => {
-      console.log(`All images in directory ${inputDir} resized to ${sizes} and copied to ${outputDir}`);
+      spinner.succeed(`All images in directory ${inputDir} resized to ${sizes} and copied to ${outputDir}`);
     })
     .catch(err => {
-      console.log(err);
+      spinner.fail(err);
     })
 }
 
