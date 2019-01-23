@@ -4,11 +4,12 @@
 */
 
 const fs = require('fs');
+const glob = require('glob');
 const sharp = require('sharp');
 const ora = require('ora');
 
 /**
- * private helper function getDirContents - asynchronously get the contents of a directory and return it. Returns a Promise
+ * private helper function getDirContents - asynchronously and recursively get the contents of a directory and returns a list of file paths. Returns a Promise
  * @param {string} dir 
  */
 const getDirContents = (dir) => {
@@ -17,15 +18,49 @@ const getDirContents = (dir) => {
     if (!fs.existsSync(dir)) {
       return reject(`${dir}: Directory does not exist`);
     }
-    // Alternatively use readdirSync() to synchronously retrieve list of filenames
-    fs.readdir(dir, (err, files) => {
+    // recursively walks through tree of directory
+    glob(dir + '/**/*', { nodir: true }, (err, fullpaths) => {
       if(err) {
         reject(err);
       } else {
-        resolve(files);
+        // remove dir part before returning
+        const partial = fullpaths.map( path => {
+          return path.replace(dir,'');
+        });
+        resolve(partial);
       }
     })
   })
+}
+
+const removeFilename = filepath => {
+  const parts = filepath.split('/');
+  // remove filename part
+  parts.pop();
+  return parts;
+}
+
+const containsDirectory = filepath => {
+  const dirArray = removeFilename(filepath);
+  if (dirArray.length > 0) {
+    return true;
+  } else {
+    return false;
+  }
+}
+
+const createDir = (filepath, outputDir) => {
+  const dirArray = removeFilename(filepath);
+  let dirPath = [];
+  // iterate over each directory in path. index sequence important!
+  for (let dir of dirArray) {
+    dirPath.push(dir);
+    // check if directory exists
+    if (!fs.existsSync(outputDir + dirPath.join('/'))) {
+      // go ahead and create directory
+      fs.mkdirSync(outputDir + dirPath.join('/'));
+    }
+  }
 }
 
 /**
@@ -56,11 +91,19 @@ const resizeImages = (inputDir, outputDir, sizes) => {
     // we've now got our array of files in the directory
     .then(files => {
       let promises = [];
-      files.forEach( filename => {
+      files.forEach( filepath => {
         sizes.forEach( size => {
-          const parts = filename.split('.');
-          const inputPath = inputDir + filename;
+
+          if (containsDirectory(filepath)) {
+            createDir(filepath, outputDir);
+          }
+
+          // construct the complete input path for processing     
+          const inputPath = inputDir + filepath;
+          // construct the complete output path for processing 
+          const parts = filepath.split('.');
           const outputPath = outputDir + parts[0] + '-' + size.toString() + '.' + parts[parts.length - 1];
+          
           // calls sharp which returns a promise and loads, resizes and saves a single image
           promises.push(sharp(inputPath).resize(size).toFile(outputPath));
         });
