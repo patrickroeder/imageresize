@@ -19,7 +19,7 @@ const getDirContents = (dir) => {
       return reject(`${dir}: Directory does not exist`);
     }
     // recursively walks through tree of directory
-    glob(dir + '/**/*', { nodir: true }, (err, fullpaths) => {
+    glob(dir + '/**/*{jpg,jpeg,png,gif,webp}', { nodir: true }, (err, fullpaths) => {
       if(err) {
         reject(err);
       } else {
@@ -103,7 +103,7 @@ const resizeImages = (inputDir, outputDir, sizes) => {
           // construct the complete output path for processing 
           const parts = filepath.split('.');
           const outputPath = outputDir + parts[0] + '-' + size.toString() + '.' + parts[parts.length - 1];
-          
+
           // calls sharp which returns a promise and loads, resizes and saves a single image
           promises.push(sharp(inputPath).resize(size).toFile(outputPath));
         });
